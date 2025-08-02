@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Search Puzzle - Fixed</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        select {
+            padding: 6px 12px;
+            font-size: 14px;
+            border: 1px solid oklch(87.1% .006 286.286);
+            border-radius: 6px;
+            background-color: white;
+            color: oklch(55.2% .016 285.938);
+            cursor: pointer;
+            min-width: 150px;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #000000;
+            box-shadow: 0 0 5px rgb(3 3 3 / 30%);
+        }
+        .timer-display {
+    background: #000;
+    color: white;
+    padding: 15px 25px;
+    margin: 20px auto;
+    border-radius: 6px;
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    max-width: 200px;
+    position: relative;
+    overflow: hidden;
+}
+
+        .timer-display.hidden {
+            display: none;
+        }
+
+        .timer-display::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .timer-display.running::before {
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                left: -100%;
+            }
+
+            100% {
+                left: 100%;
+            }
+        }
+
+        #timerText {
+    font-size: 20px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    letter-spacing: 2px;
+    background: #454547;
+    padding: 4px 12px;
+    border-radius: 6px;
+}
+
+
+        .timer-display.paused {
+            border-color: #f44336;
+        }
+
+        button {
+            border: none;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #ffffff !important;
+            font-weight: 400;
+            font-size: 13px;
+            margin-top: 5px;
+            position: relative;
+            z-index: 1;
+            background: #000;
+            padding: 8px 16px;
+            border-radius: 6px;
+            line-height: 20px;
+        }
+
+        button:hover {
+            background-color: #000000d6;
+        }
+
+        #puzzle {
+            margin: 15px auto;
+            max-width: 100%;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 1px solid oklch(87.1% .006 286.286);
+            background: oklch(96.7% .001 286.375);
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .puzzle-container {
+            display: inline-block;
+        }
+
+        .puzzle-row {
+            display: flex;
+            margin: 0;
+            padding: 0;
+            line-height: 0;
+        }
+
+        .puzzle-row span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border: 1px solid hsl(20 5.9% 90%);
+            margin: 1px;
+            font-size: 16px;
+            text-transform: uppercase;
+            background: white;
+            user-select: none;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1024px) {
+            .puzzle-row span {
+                width: 30px;
+                height: 30px;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .puzzle-row span {
+                width: 20px;
+                height: 20px;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .puzzle-row span {
+                width: 15px;
+                height: 15px;
+                font-size: 12px;
+                margin: 0.5px;
+            }
+        }
+
+        #puzzle .selected {
+            background-color: yellow;
+            color: black;
+        }
+
+        #puzzle .found {
+            background-color: green;
+            color: white;
+            font-weight: bold;
+        }
+
+        #words {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 1105px;
+            margin: 20px auto;
+            background: #efeff0;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid oklch(92% .004 286.32);
+        }
+
+        #words ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0 20px;
+            text-align: left;
+            column-count: 3;
+            gap: 23px;
+            width: 100%;
+        }
+
+        #words li {
+            padding: 5px 0;
+            text-transform: uppercase;
+            cursor: pointer;
+            margin: 2px 0;
+            background: #fff;
+            margin-bottom: 10px;
+            padding: 5px 12px;
+            border: 1px solid oklch(92% .004 286.32);
+            border-radius: 6px;
+            font-size: 14px;
+            line-height: 20px;
+        }
+
+        #words li.found {
+            text-decoration: line-through;
+            color: #999;
+        }
+
+        /* Print styles */
+        .print-container {
+            display: none;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            .print-container,
+            .print-container * {
+                visibility: visible;
+            }
+
+            .print-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                display: block !important;
+                font-family: Arial, sans-serif;
+                color: black;
+                background: white;
+            }
+
+            .print-header {
+                text-align: center;
+                margin-bottom: 20px;
+                page-break-inside: avoid;
+            }
+
+            .print-content {
+                display: block;
+                page-break-inside: avoid;
+            }
+
+            .print-puzzle {
+                text-align: center;
+                margin-bottom: 30px;
+            }
+
+            .print-puzzle-grid {
+                border-collapse: collapse;
+                margin: 0 auto;
+                border: 2px solid black;
+            }
+
+            .print-puzzle-row {
+                margin: 0;
+                padding: 0;
+            }
+
+            .print-puzzle-cell {
+                width: 25px;
+                height: 25px;
+                border: 1px solid #666;
+                font-size: 12px;
+                font-weight: bold;
+                text-transform: uppercase;
+                background: white;
+                color: black;
+                text-align: center;
+                vertical-align: middle;
+                padding: 0;
+                margin: 0;
+            }
+
+            .print-words {
+                width: 100%;
+                margin-top: 20px;
+            }
+
+            .print-words h3 {
+                margin-top: 0;
+                margin-bottom: 15px;
+                font-size: 16px;
+                text-align: center;
+                border-bottom: 2px solid black;
+                padding-bottom: 5px;
+            }
+
+            .print-words-list {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+                column-count: 3;
+                column-gap: 30px;
+                column-fill: balance;
+            }
+
+            .print-words-list li {
+                margin: 8px 0;
+                font-size: 14px;
+                text-transform: uppercase;
+                break-inside: avoid;
+                padding: 3px 0;
+                page-break-inside: avoid;
+            }
+
+            .print-footer {
+                position: fixed;
+                bottom: 20px;
+                left: 0;
+                right: 0;
+                text-align: center;
+                font-size: 12px;
+                color: #666;
+                border-top: 1px solid #ccc;
+                padding-top: 10px;
+                background: white;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Word Search Puzzle</h1>
+
+    <div class="controls">
+        <label for="topic">Choose Topic:</label>
+        <select id="topic">
+            <option value="programming">Programming</option>
+            <option value="cellbiology">Cell Biology</option>
+            <option value="biochemistry">Biochemistry</option>
+            <option value="physics">Physics</option>
+            <option value="chemistry">Chemistry</option>
+            <option value="mathematics">Mathematics</option>
+            <option value="astronomy">Astronomy</option>
+            <option value="anatomy">Human Anatomy</option>
+            <option value="botany">Botany</option>
+            <option value="geology">Geology</option>
+        </select>
+        <button id="solve">Solve Puzzle</button>
+        <button id="new">New Puzzle</button>
+        <button id="print">Print PDF</button>
+        <button id="timer">Start Timer</button>
+
+    </div>
+
+    <div class="timer-display hidden" id="timerDisplay">
+        <span id="timerText">00:00</span>
+    </div>
+
+    <div id="puzzle"></div>
+
+    <div id="words"></div>
+
+    <!-- Hidden print container -->
+    <div class="print-container" id="printContainer">
+        <div class="print-header">
+            <h1 id="printTitle">Word Search Puzzle</h1>
+        </div>
+        <div class="print-content">
+            <div class="print-puzzle">
+                <div id="printPuzzleGrid"></div>
+            </div>
+            <div class="print-words">
+                <h3>Find These Words:</h3>
+                <ul class="print-words-list" id="printWordsList"></ul>
+            </div>
+        </div>
+        <div class="print-footer">
+            <p>© Fixed Word Search Puzzle - Educational Tool</p>
+        </div>
+    </div>
+
+    <script>
+        // Fixed Word Search Puzzle Generator
+        const WordFind = {
+            // Generate a random letter
+            randomLetter: function () {
+                return String.fromCharCode(65 + Math.floor(Math.random() * 26));
+            },
+
+            // Create empty grid (null values indicate empty cells)
+            createEmptyGrid: function (width, height) {
+                const grid = [];
+                for (let i = 0; i < height; i++) {
+                    grid[i] = [];
+                    for (let j = 0; j < width; j++) {
+                        grid[i][j] = null; // null means empty, will be filled later
+                    }
+                }
+                return grid;
+            },
+
+            // Fill empty cells with random letters
+            fillEmptyCells: function (grid) {
+                for (let i = 0; i < grid.length; i++) {
+                    for (let j = 0; j < grid[i].length; j++) {
+                        if (grid[i][j] === null) {
+                            grid[i][j] = this.randomLetter();
+                        }
+                    }
+                }
+            },
+
+            // Check if word can be placed at position
+            canPlaceWord: function (grid, word, startRow, startCol, direction) {
+                const directions = {
+                    horizontal: [0, 1],
+                    vertical: [1, 0],
+                    diagonal: [1, 1],
+                    diagonalUp: [-1, 1]
+                };
+
+                const [deltaRow, deltaCol] = directions[direction];
+                if (!deltaRow && deltaRow !== 0) return false; // Invalid direction
+
+                // Check if word fits within grid bounds
+                for (let i = 0; i < word.length; i++) {
+                    const row = startRow + i * deltaRow;
+                    const col = startCol + i * deltaCol;
+
+                    // Check bounds
+                    if (row < 0 || row >= grid.length || col < 0 || col >= grid[0].length) {
+                        return false;
+                    }
+
+                    // Check for conflicts (only if cell is already occupied)
+                    if (grid[row][col] !== null && grid[row][col] !== word[i]) {
+                        return false;
+                    }
+                }
+                return true;
+            },
+
+            // Place a word in the grid
+            placeWord: function (grid, word, startRow, startCol, direction) {
+                const directions = {
+                    horizontal: [0, 1],
+                    vertical: [1, 0],
+                    diagonal: [1, 1],
+                    diagonalUp: [-1, 1]
+                };
+
+                const [deltaRow, deltaCol] = directions[direction];
+                const positions = [];
+
+                for (let i = 0; i < word.length; i++) {
+                    const row = startRow + i * deltaRow;
+                    const col = startCol + i * deltaCol;
+
+                    grid[row][col] = word[i];
+                    positions.push([row, col]);
+                }
+
+                return positions;
+            },
+
+            // Generate puzzle with proper word placement
+            newPuzzle: function (words, options = {}) {
+                const width = options.width || 15;
+                const height = options.height || 15;
+                const grid = this.createEmptyGrid(width, height);
+                const placedWords = [];
+                const debugInfo = [];
+
+                // Available directions
+                const directions = ['horizontal', 'vertical'];
+
+                // Sort words by length (longest first) for better placement success
+                const sortedWords = [...words].sort((a, b) => b.length - a.length);
+
+                debugInfo.push(`Starting puzzle generation with ${sortedWords.length} words`);
+                debugInfo.push(`Grid size: ${width}x${height}`);
+
+                sortedWords.forEach((word, wordIndex) => {
+                    const upperWord = word.toUpperCase();
+                    let placed = false;
+                    let attempts = 0;
+                    const maxAttempts = 1000;
+
+                    debugInfo.push(`\nAttempting to place word: ${upperWord} (${upperWord.length} letters)`);
+
+                    while (!placed && attempts < maxAttempts) {
+                        // Randomly choose direction
+                        const direction = directions[Math.floor(Math.random() * directions.length)];
+
+                        // Calculate valid starting positions based on direction and word length
+                        let maxStartRow, maxStartCol;
+
+                        if (direction === 'horizontal') {
+                            maxStartRow = height;
+                            maxStartCol = width - upperWord.length + 1;
+                        } else if (direction === 'vertical') {
+                            maxStartRow = height - upperWord.length + 1;
+                            maxStartCol = width;
+                        } else if (direction === 'diagonal') {
+                            maxStartRow = height - upperWord.length + 1;
+                            maxStartCol = width - upperWord.length + 1;
+                        } else if (direction === 'diagonalUp') {
+                            maxStartRow = upperWord.length;
+                            maxStartCol = width - upperWord.length + 1;
+                        }
+
+                        if (maxStartRow > 0 && maxStartCol > 0) {
+                            const startRow = Math.floor(Math.random() * maxStartRow);
+                            const startCol = Math.floor(Math.random() * maxStartCol);
+
+                            if (this.canPlaceWord(grid, upperWord, startRow, startCol, direction)) {
+                                const positions = this.placeWord(grid, upperWord, startRow, startCol, direction);
+                                placedWords.push({
+                                    word: upperWord,
+                                    positions: positions,
+                                    startRow: startRow,
+                                    startCol: startCol,
+                                    direction: direction
+                                });
+                                placed = true;
+                                debugInfo.push(`✓ Successfully placed ${upperWord} at (${startRow}, ${startCol}) ${direction} after ${attempts + 1} attempts`);
+                            }
+                        }
+                        attempts++;
+                    }
+
+                    if (!placed) {
+                        debugInfo.push(`✗ Failed to place word: ${upperWord} after ${attempts} attempts`);
+                    }
+                });
+
+                // Fill empty cells with random letters
+                this.fillEmptyCells(grid);
+
+                debugInfo.push(`\nPuzzle generation complete!`);
+                debugInfo.push(`Successfully placed ${placedWords.length} out of ${words.length} words`);
+
+                return {
+                    grid: grid,
+                    words: placedWords,
+                    debugInfo: debugInfo,
+                    totalWords: words.length,
+                    placedCount: placedWords.length
+                };
+            },
+
+            // Find word in grid (for solving)
+            findWord: function (grid, word) {
+                const upperWord = word.toUpperCase();
+                const height = grid.length;
+                const width = grid[0].length;
+                const directions = [
+                    [0, 1],   // horizontal
+                    [1, 0],   // vertical
+                    [0, -1],  // horizontal reverse
+                    [-1, 0],  // vertical reverse
+                    [1, 1],   // diagonal
+                    [-1, -1], // diagonal reverse
+                    [1, -1],  // diagonal up
+                    [-1, 1]   // diagonal up reverse
+                ];
+
+                for (let row = 0; row < height; row++) {
+                    for (let col = 0; col < width; col++) {
+                        for (let [deltaRow, deltaCol] of directions) {
+                            const positions = [];
+                            let found = true;
+
+                            for (let i = 0; i < upperWord.length; i++) {
+                                const newRow = row + i * deltaRow;
+                                const newCol = col + i * deltaCol;
+
+                                if (newRow < 0 || newRow >= height ||
+                                    newCol < 0 || newCol >= width ||
+                                    grid[newRow][newCol] !== upperWord[i]) {
+                                    found = false;
+                                    break;
+                                }
+                                positions.push([newRow, newCol]);
+                            }
+
+                            if (found) {
+                                return {
+                                    word: upperWord,
+                                    positions: positions
+                                };
+                            }
+                        }
+                    }
+                }
+                return null;
+            }
+        };
+
+        // Game state management
+        document.addEventListener('DOMContentLoaded', function () {
+            let gamePuzzle = null;
+            let selectedCells = [];
+            let isMouseDown = false;
+
+            // Timer state
+            let timerInterval = null;
+            let timerSeconds = 0;
+            let isTimerRunning = false;
+            let timerStartTime = null;
+
+            // Word collections for different topics
+            const wordTopics = {
+                programming: ['javascript', 'html', 'css', 'react', 'angular', 'vue', 'node', 'python', 'java', 'typescript'],
+                cellbiology: ['mitochondria', 'nucleus', 'ribosome', 'chromosome', 'cytoplasm', 'membrane', 'organelle', 'vacuole', 'lysosome', 'endoplasm'],
+                biochemistry: ['enzyme', 'protein', 'amino', 'glucose', 'lipid', 'nucleotide', 'catalyst', 'metabolism', 'synthesis', 'hydrolysis'],
+                physics: ['gravity', 'momentum', 'velocity', 'energy', 'force', 'matter', 'quantum', 'photon', 'electron', 'neutron'],
+                chemistry: ['molecule', 'atom', 'element', 'compound', 'reaction', 'periodic', 'carbon', 'oxygen', 'hydrogen', 'sodium'],
+                mathematics: ['algebra', 'geometry', 'calculus', 'equation', 'function', 'derivative', 'integral', 'matrix', 'vector', 'theorem'],
+                astronomy: ['galaxy', 'planet', 'nebula', 'quasar', 'supernova', 'asteroid', 'comet', 'telescope', 'orbit', 'universe'],
+                anatomy: ['heart', 'brain', 'liver', 'kidney', 'muscle', 'skeleton', 'nervous', 'circulatory', 'respiratory', 'digestive'],
+                botany: ['photosynthesis', 'chlorophyll', 'stomata', 'xylem', 'phloem', 'pollen', 'pistil', 'stamen', 'cotyledon', 'cambium'],
+                geology: ['sediment', 'igneous', 'metamorphic', 'mineral', 'crystal', 'fossil', 'earthquake', 'volcano', 'erosion', 'plateau']
+            };
+
+            // Get current topic and words
+            function getCurrentTopic() {
+                return document.getElementById('topic').value;
+            }
+
+            function getCurrentWords() {
+                const topic = getCurrentTopic();
+                return wordTopics[topic] || wordTopics.programming;
+            }
+
+            // Initialize the game
+            function initGame() {
+                const puzzleEl = document.querySelector('#puzzle');
+                const wordsEl = document.querySelector('#words');
+
+                // Clear previous game
+                puzzleEl.innerHTML = '';
+                wordsEl.innerHTML = '';
+                selectedCells = [];
+
+                // Reset timer when starting new game
+                resetTimer();
+
+                // Get words for current topic
+                const words = getCurrentWords();
+                const topic = getCurrentTopic();
+                const topicName = document.querySelector(`#topic option[value="${topic}"]`).textContent;
+
+                // Update title to show current topic
+                document.querySelector('h1').textContent = `Word Search Puzzle - ${topicName}`;
+
+                console.log('Generating puzzle for topic:', topicName);
+                console.log('Words to place:', words);
+
+                // Create puzzle with fixed algorithm
+                const puzzleData = WordFind.newPuzzle(words, {
+                    width: 15,
+                    height: 15
+                });
+
+                gamePuzzle = puzzleData;
+                console.log('Generated puzzle:', gamePuzzle);
+
+                // Draw the puzzle
+                const container = document.createElement('div');
+                container.className = 'puzzle-container';
+
+                // Create the puzzle grid
+                for (let i = 0; i < puzzleData.grid.length; i++) {
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = 'puzzle-row';
+
+                    for (let j = 0; j < puzzleData.grid[i].length; j++) {
+                        const cell = document.createElement('span');
+                        cell.textContent = puzzleData.grid[i][j];
+                        cell.setAttribute('data-row', i);
+                        cell.setAttribute('data-col', j);
+                        rowDiv.appendChild(cell);
+                    }
+
+                    container.appendChild(rowDiv);
+                }
+
+                puzzleEl.appendChild(container);
+
+                // Create word list - only show words that were actually placed
+                const wordList = document.createElement('ul');
+                gamePuzzle.words.forEach(wordObj => {
+                    const li = document.createElement('li');
+                    li.textContent = wordObj.word.toLowerCase();
+                    wordList.appendChild(li);
+                });
+                wordsEl.appendChild(wordList);
+
+                // Add word list click handler
+                wordList.querySelectorAll('li').forEach(item => {
+                    item.addEventListener('click', function () {
+                        const word = this.textContent.trim();
+                        solveWord(word);
+                    });
+                });
+
+                // Add mouse event listeners for word selection
+                const cells = puzzleEl.querySelectorAll('span');
+                cells.forEach(cell => {
+                    cell.addEventListener('mousedown', handleMouseDown);
+                    cell.addEventListener('mouseenter', handleMouseEnter);
+                    cell.addEventListener('mouseup', handleMouseUp);
+                });
+
+                // Make puzzle cells unselectable
+                document.onselectstart = function () { return false; };
+
+                console.log(`Puzzle created successfully! Placed ${gamePuzzle.placedCount} out of ${gamePuzzle.totalWords} words.`);
+            }
+
+            // Mouse event handlers
+            function handleMouseDown(e) {
+                isMouseDown = true;
+                clearSelection();
+                const cell = e.target;
+                selectCell(cell);
+                return false;
+            }
+
+            function handleMouseEnter(e) {
+                if (isMouseDown) {
+                    const cell = e.target;
+                    selectCell(cell);
+                }
+            }
+
+            function handleMouseUp() {
+                if (selectedCells.length > 0) {
+                    checkSelection();
+                }
+                isMouseDown = false;
+            }
+
+            function selectCell(cell) {
+                if (!cell.classList.contains('found')) {
+                    cell.classList.add('selected');
+                    if (!selectedCells.includes(cell)) {
+                        selectedCells.push(cell);
+                    }
+                }
+            }
+
+            function clearSelection() {
+                selectedCells.forEach(cell => {
+                    cell.classList.remove('selected');
+                });
+                selectedCells = [];
+            }
+
+            function checkSelection() {
+                const selectedWord = selectedCells.map(cell => cell.textContent).join('');
+                const reversedWord = selectedWord.split('').reverse().join('');
+
+                // Check against placed words only
+                const placedWordStrings = gamePuzzle.words.map(w => w.word);
+
+                if (placedWordStrings.includes(selectedWord)) {
+                    markWordAsFound(selectedWord);
+                } else if (placedWordStrings.includes(reversedWord)) {
+                    markWordAsFound(reversedWord);
+                }
+
+                clearSelection();
+            }
+
+            function markWordAsFound(word) {
+                // Mark in puzzle
+                selectedCells.forEach(cell => {
+                    cell.classList.remove('selected');
+                    cell.classList.add('found');
+                });
+
+                // Mark in word list
+                const wordItems = document.querySelectorAll('#words li');
+                wordItems.forEach(item => {
+                    if (item.textContent.trim().toUpperCase() === word.toUpperCase()) {
+                        item.classList.add('found');
+                    }
+                });
+
+                // Check if game is complete
+                checkGameComplete();
+            }
+
+            function checkGameComplete() {
+                const foundWords = document.querySelectorAll('#words li.found').length;
+                const totalWords = document.querySelectorAll('#words li').length;
+
+                if (foundWords === totalWords) {
+                    if (isTimerRunning) {
+                        stopTimer();
+                        const finalTime = formatTime(timerSeconds);
+                        setTimeout(() => {
+                            alert(`Congratulations! You found all the words!\nTime: ${finalTime}`);
+                        }, 100);
+                    } else {
+                        setTimeout(() => {
+                            alert('Congratulations! You found all the words!');
+                        }, 100);
+                    }
+                }
+            }
+
+            // Solve functions
+            function solveWord(word) {
+                console.log('Solving word:', word);
+
+                // Use the stored positions from placed words
+                const placedWord = gamePuzzle.words.find(w => w.word.toLowerCase() === word.toLowerCase());
+                if (placedWord) {
+                    console.log('Found placed word, using stored positions:', placedWord.positions);
+                    markSolutionInGrid(placedWord.positions);
+                    markWordInList(word);
+                    checkGameComplete();
+                    return;
+                }
+
+                // Fallback: search in grid
+                const result = WordFind.findWord(gamePuzzle.grid, word);
+                if (result) {
+                    console.log('Found word via search at positions:', result.positions);
+                    markSolutionInGrid(result.positions);
+                    markWordInList(word);
+                    checkGameComplete();
+                } else {
+                    console.warn('Word not found in grid:', word);
+                }
+            }
+
+            function solvePuzzle() {
+                console.log('Solving entire puzzle');
+
+                if (!gamePuzzle) {
+                    console.error('No puzzle initialized');
+                    return;
+                }
+
+                // Get all unfound words
+                const wordsToSolve = [];
+                document.querySelectorAll('#words li:not(.found)').forEach(item => {
+                    wordsToSolve.push(item.textContent.trim());
+                });
+
+                console.log('Words to solve:', wordsToSolve);
+
+                // Solve each word with a small delay for visual effect
+                wordsToSolve.forEach((word, index) => {
+                    setTimeout(() => {
+                        solveWord(word);
+                    }, index * 200);
+                });
+            }
+
+            function markWordInList(word) {
+                const wordItems = document.querySelectorAll('#words li');
+                wordItems.forEach(item => {
+                    const itemText = item.textContent.trim().toUpperCase();
+                    if (itemText === word.toUpperCase()) {
+                        item.classList.add('found');
+                    }
+                });
+            }
+
+            function markSolutionInGrid(positions) {
+                const cells = document.querySelectorAll('#puzzle span');
+                positions.forEach(pos => {
+                    const [row, col] = pos;
+                    cells.forEach(cell => {
+                        const cellRow = parseInt(cell.getAttribute('data-row'));
+                        const cellCol = parseInt(cell.getAttribute('data-col'));
+                        if (cellRow === row && cellCol === col) {
+                            cell.classList.add('found');
+                        }
+                    });
+                });
+            }
+
+            // Print functions
+            function generatePrintVersion() {
+                if (!gamePuzzle) {
+                    alert('Please generate a puzzle first!');
+                    return;
+                }
+
+                const topic = getCurrentTopic();
+                const topicName = document.querySelector(`#topic option[value="${topic}"]`).textContent;
+
+                // Update print title
+                document.getElementById('printTitle').textContent = `Word Search Puzzle - ${topicName}`;
+
+                // Generate print puzzle grid using table structure
+                const printGrid = document.getElementById('printPuzzleGrid');
+                printGrid.innerHTML = '';
+
+                const printTable = document.createElement('table');
+                printTable.className = 'print-puzzle-grid';
+
+                // Create table rows and cells
+                for (let i = 0; i < gamePuzzle.grid.length; i++) {
+                    const row = document.createElement('tr');
+                    row.className = 'print-puzzle-row';
+
+                    for (let j = 0; j < gamePuzzle.grid[i].length; j++) {
+                        const cell = document.createElement('td');
+                        cell.className = 'print-puzzle-cell';
+                        cell.textContent = gamePuzzle.grid[i][j];
+                        row.appendChild(cell);
+                    }
+
+                    printTable.appendChild(row);
+                }
+
+                printGrid.appendChild(printTable);
+
+                // Generate print word list
+                const printWordsList = document.getElementById('printWordsList');
+                printWordsList.innerHTML = '';
+
+                gamePuzzle.words.forEach(wordObj => {
+                    const li = document.createElement('li');
+                    li.textContent = wordObj.word.toLowerCase();
+                    printWordsList.appendChild(li);
+                });
+            }
+
+            function printPuzzle() {
+                generatePrintVersion();
+                setTimeout(() => {
+                    window.print();
+                }, 100);
+            }
+
+            // Timer functions
+            function formatTime(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }
+
+            function updateTimerDisplay() {
+                document.getElementById('timerText').textContent = formatTime(timerSeconds);
+            }
+
+            function startTimer() {
+                if (isTimerRunning) return;
+
+                const timerDisplay = document.getElementById('timerDisplay');
+                timerDisplay.classList.remove('hidden');
+
+                isTimerRunning = true;
+                timerStartTime = Date.now() - (timerSeconds * 1000);
+
+                const timerButton = document.getElementById('timer');
+                timerButton.textContent = 'Stop Timer';
+                timerDisplay.classList.add('running');
+                timerDisplay.classList.remove('paused');
+
+                timerInterval = setInterval(() => {
+                    timerSeconds = Math.floor((Date.now() - timerStartTime) / 1000);
+                    updateTimerDisplay();
+                }, 100);
+            }
+
+            function stopTimer() {
+                if (!isTimerRunning) return;
+
+                isTimerRunning = false;
+                clearInterval(timerInterval);
+
+                const timerButton = document.getElementById('timer');
+                const timerDisplay = document.getElementById('timerDisplay');
+
+                timerButton.textContent = 'Start Timer';
+                timerDisplay.classList.remove('running');
+                timerDisplay.classList.add('paused');
+            }
+
+            function resetTimer() {
+                stopTimer();
+                timerSeconds = 0;
+                updateTimerDisplay();
+
+                const timerDisplay = document.getElementById('timerDisplay');
+                timerDisplay.classList.remove('running', 'paused');
+                timerDisplay.classList.add('hidden');
+                document.getElementById('timer').textContent = 'Start Timer';
+            }
+
+            function toggleTimer() {
+                if (isTimerRunning) {
+                    stopTimer();
+                } else {
+                    startTimer();
+                }
+            }
+
+            // Event listeners
+            document.getElementById('solve').addEventListener('click', function (e) {
+                e.preventDefault();
+                solvePuzzle();
+            });
+
+            document.getElementById('new').addEventListener('click', function (e) {
+                e.preventDefault();
+                initGame();
+            });
+
+            document.getElementById('print').addEventListener('click', function (e) {
+                e.preventDefault();
+                printPuzzle();
+            });
+
+            document.getElementById('timer').addEventListener('click', function (e) {
+                e.preventDefault();
+                toggleTimer();
+            });
+
+            document.getElementById('topic').addEventListener('change', function (e) {
+                initGame();
+            });
+
+            document.addEventListener('mouseup', handleMouseUp);
+
+            // Initialize the game
+            initGame();
+        });
+    </script>
+</body>
+
+</html>
